@@ -1,0 +1,1070 @@
+/**
+ * ==========================================
+ * JS MASTER - แพลตฟอร์มเรียน JavaScript ภาษาไทย
+ * ==========================================
+ * 
+ * ฟีเจอร์:
+ * 1. ระบบ Login (แยกบัญชีผู้ใช้)
+ * 2. ระบบ Streak (ไฟ) แบบ Duolingo
+ * 3. ระบบตรวจสอบโจทย์ (ต้องทำถูกก่อนไปบทถัดไป)
+ * 4. หมวดหมู่บทเรียน (Course Categories)
+ * 5. Code Editor แบบ Interactive
+ */
+
+// ==========================================
+// COURSE DATA - หมวดหมู่และบทเรียน
+// ==========================================
+const courses = [
+    {
+        id: 'basics',
+        title: 'JavaScript พื้นฐาน',
+        icon: '📘',
+        description: 'เริ่มต้นเรียนรู้ JavaScript ตั้งแต่เบสิค',
+        lessons: [
+            {
+                id: 1,
+                title: "รู้จักกับ JavaScript",
+                content: `
+                    <p><strong>🎉 ยินดีต้อนรับสู่โลกของ JavaScript!</strong></p>
+                    <p>JavaScript เป็นภาษาโปรแกรมที่ทำให้เว็บไซต์มีชีวิต ทุกครั้งที่คุณเห็นเว็บไซต์ที่มี Animation หรือตอบสนองต่อการคลิกของคุณ นั่นคือผลงานของ JavaScript!</p>
+                    
+                    <p><strong>🚀 สิ่งที่คุณทำได้ด้วย JavaScript:</strong></p>
+                    <ul>
+                        <li>สร้างเว็บไซต์ที่โต้ตอบกับผู้ใช้ได้</li>
+                        <li>ทำ Animation และเอฟเฟกต์สวยๆ</li>
+                        <li>สร้างเกมบนเว็บ</li>
+                    </ul>
+                `,
+                codeExample: `// ใช้ console.log() เพื่อแสดงข้อความ
+console.log("สวัสดี JavaScript!");
+
+// แสดงผลการคำนวณ
+console.log(1 + 1);`,
+                challenge: {
+                    instruction: `<strong>🎯 โจทย์:</strong> ใช้ <code>console.log()</code> แสดงข้อความ <code>"Hello World"</code>`,
+                    expectedOutput: ["Hello World"],
+                    hint: 'พิมพ์: console.log("Hello World");'
+                }
+            },
+            {
+                id: 2,
+                title: "ตัวแปร (Variables)",
+                content: `
+                    <p><strong>📦 ตัวแปร</strong> คือ "กล่องเก็บข้อมูล" ที่เราตั้งชื่อได้</p>
+                    
+                    <p><strong>วิธีสร้างตัวแปร:</strong></p>
+                    <ul>
+                        <li><code>let</code> - ค่าที่เปลี่ยนแปลงได้</li>
+                        <li><code>const</code> - ค่าคงที่</li>
+                    </ul>
+                `,
+                codeExample: `// สร้างตัวแปร
+let name = "สมชาย";
+let age = 25;
+
+console.log(name);
+console.log(age);`,
+                challenge: {
+                    instruction: `<strong>🎯 โจทย์:</strong> สร้างตัวแปรชื่อ <code>myName</code> เก็บชื่อของคุณ แล้ว <code>console.log(myName)</code>`,
+                    validateFn: (outputs, code) => {
+                        return code.includes('myName') &&
+                            code.includes('console.log') &&
+                            outputs.length > 0 &&
+                            outputs[0].content.trim().length > 0;
+                    },
+                    hint: 'ตัวอย่าง: let myName = "ชื่อคุณ"; console.log(myName);'
+                }
+            },
+            {
+                id: 3,
+                title: "ชนิดข้อมูล (Data Types)",
+                content: `
+                    <p><strong>🏷️ ชนิดข้อมูลพื้นฐาน:</strong></p>
+                    <ul>
+                        <li><code>String</code> - ข้อความ <code>"สวัสดี"</code></li>
+                        <li><code>Number</code> - ตัวเลข <code>42</code></li>
+                        <li><code>Boolean</code> - <code>true</code> / <code>false</code></li>
+                    </ul>
+                    <p>ใช้ <code>typeof</code> เพื่อตรวจสอบชนิด</p>
+                `,
+                codeExample: `let text = "Hello";
+let num = 100;
+let isTrue = true;
+
+console.log(typeof text);   // "string"
+console.log(typeof num);    // "number"
+console.log(typeof isTrue); // "boolean"`,
+                challenge: {
+                    instruction: `<strong>🎯 โจทย์:</strong> สร้างตัวแปร <code>myAge</code> เก็บอายุเป็นตัวเลข แล้วใช้ <code>console.log(typeof myAge)</code> ให้แสดงผลเป็น <code>number</code>`,
+                    expectedOutput: ["number"],
+                    hint: 'ตัวอย่าง: let myAge = 20; console.log(typeof myAge);'
+                }
+            }
+        ]
+    },
+    {
+        id: 'control-flow',
+        title: 'การควบคุมการทำงาน',
+        icon: '🔀',
+        description: 'เงื่อนไข, ลูป และการตัดสินใจ',
+        lessons: [
+            {
+                id: 4,
+                title: "เงื่อนไข If-Else",
+                content: `
+                    <p><strong>🔀 If-Else</strong> ทำให้โปรแกรมตัดสินใจได้</p>
+                    <ul>
+                        <li><code>===</code> เท่ากัน</li>
+                        <li><code>></code> มากกว่า</li>
+                        <li><code><</code> น้อยกว่า</li>
+                        <li><code>>=</code> มากกว่าหรือเท่ากับ</li>
+                    </ul>
+                `,
+                codeExample: `let age = 20;
+
+if (age >= 18) {
+    console.log("ผู้ใหญ่");
+} else {
+    console.log("เด็ก");
+}`,
+                challenge: {
+                    instruction: `<strong>🎯 โจทย์ประยุกต์:</strong> สร้างตัวแปร <code>score</code> เก็บค่า <code>75</code> แล้วเขียนเงื่อนไข:<br>
+                    - ถ้า score >= 50 ให้แสดง <code>"ผ่าน"</code><br>
+                    - ถ้าไม่ผ่าน ให้แสดง <code>"ไม่ผ่าน"</code>`,
+                    expectedOutput: ["ผ่าน"],
+                    hint: 'สร้าง score = 75 แล้วใช้ if (score >= 50) { console.log("ผ่าน"); }'
+                }
+            },
+            {
+                id: 5,
+                title: "Loop (การวนซ้ำ)",
+                content: `
+                    <p><strong>🔁 Loop</strong> คือการทำซ้ำคำสั่ง</p>
+                    <p><strong>for loop:</strong></p>
+                    <code>for (let i = 1; i <= 5; i++) { ... }</code>
+                    <ul>
+                        <li><code>i = 1</code> - เริ่มต้น</li>
+                        <li><code>i <= 5</code> - เงื่อนไข</li>
+                        <li><code>i++</code> - เพิ่มค่าทีละ 1</li>
+                    </ul>
+                `,
+                codeExample: `for (let i = 1; i <= 3; i++) {
+    console.log(i);
+}
+// แสดง: 1, 2, 3`,
+                challenge: {
+                    instruction: `<strong>🎯 โจทย์ประยุกต์:</strong> ใช้ <code>for loop</code> แสดงตัวเลข <code>1</code> ถึง <code>5</code> (แต่ละตัวแยกกัน)`,
+                    expectedOutput: ["1", "2", "3", "4", "5"],
+                    hint: 'for (let i = 1; i <= 5; i++) { console.log(i); }'
+                }
+            }
+        ]
+    },
+    {
+        id: 'data-structures',
+        title: 'โครงสร้างข้อมูล',
+        icon: '📊',
+        description: 'Array, Object และการจัดการข้อมูล',
+        lessons: [
+            {
+                id: 6,
+                title: "Array (อาร์เรย์)",
+                content: `
+                    <p><strong>📋 Array</strong> เก็บข้อมูลหลายๆ ค่าในตัวแปรเดียว</p>
+                    <ul>
+                        <li>สร้างด้วย <code>[]</code></li>
+                        <li>Index เริ่มที่ <code>0</code></li>
+                        <li><code>.length</code> - นับจำนวน</li>
+                        <li><code>.push()</code> - เพิ่มท้าย</li>
+                    </ul>
+                `,
+                codeExample: `let fruits = ["แอปเปิ้ล", "กล้วย", "ส้ม"];
+
+console.log(fruits[0]); // แอปเปิ้ล
+console.log(fruits.length); // 3`,
+                challenge: {
+                    instruction: `<strong>🎯 โจทย์ประยุกต์:</strong> สร้าง Array ชื่อ <code>colors</code> มี 3 สี แล้วใช้ <code>console.log(colors.length)</code> แสดงจำนวนสมาชิก (ต้องได้ <code>3</code>)`,
+                    expectedOutput: ["3"],
+                    hint: 'let colors = ["red", "green", "blue"]; console.log(colors.length);'
+                }
+            },
+            {
+                id: 7,
+                title: "Object (อ็อบเจกต์)",
+                content: `
+                    <p><strong>🏠 Object</strong> เก็บข้อมูลแบบ key-value</p>
+                    <ul>
+                        <li>สร้างด้วย <code>{ key: value }</code></li>
+                        <li>เข้าถึงด้วย <code>object.key</code></li>
+                    </ul>
+                `,
+                codeExample: `const person = {
+    name: "สมชาย",
+    age: 25
+};
+
+console.log(person.name); // สมชาย`,
+                challenge: {
+                    instruction: `<strong>🎯 โจทย์ประยุกต์:</strong> สร้าง Object ชื่อ <code>student</code> มี <code>name</code> และ <code>grade</code> แล้ว <code>console.log(student.grade)</code> ให้แสดงเกรดที่คุณใส่`,
+                    validateFn: (outputs, code) => {
+                        return code.includes('student') &&
+                            code.includes('grade') &&
+                            code.includes('console.log') &&
+                            outputs.length > 0 &&
+                            outputs[0].content.trim().length > 0;
+                    },
+                    hint: 'const student = { name: "ชื่อ", grade: "A" }; console.log(student.grade);'
+                }
+            }
+        ]
+    },
+    {
+        id: 'functions',
+        title: 'ฟังก์ชัน',
+        icon: '⚡',
+        description: 'Function และการนำกลับมาใช้ซ้ำ',
+        lessons: [
+            {
+                id: 8,
+                title: "Function (ฟังก์ชัน)",
+                content: `
+                    <p><strong>⚡ Function</strong> คือกลุ่มโค้ดที่เรียกใช้ซ้ำได้</p>
+                    <ul>
+                        <li><code>function ชื่อ() { }</code> - สร้างฟังก์ชัน</li>
+                        <li><code>ชื่อ()</code> - เรียกใช้</li>
+                        <li><code>return</code> - ส่งค่ากลับ</li>
+                    </ul>
+                `,
+                codeExample: `function greet(name) {
+    return "Hello " + name;
+}
+
+console.log(greet("World")); // Hello World`,
+                challenge: {
+                    instruction: `<strong>🎯 โจทย์ประยุกต์:</strong> สร้างฟังก์ชัน <code>add(a, b)</code> ที่ return ผลบวกของ a และ b แล้ว <code>console.log(add(3, 5))</code> ให้แสดง <code>8</code>`,
+                    expectedOutput: ["8"],
+                    hint: 'function add(a, b) { return a + b; } console.log(add(3, 5));'
+                }
+            }
+        ]
+    }
+];
+
+// ==========================================
+// STATE MANAGEMENT
+// ==========================================
+let currentUser = null;
+let state = {
+    currentCourseId: 'basics',
+    currentLessonIndex: 0,
+    completedLessons: [],
+    showPlatform: false,
+    currentLessonPassed: false,
+    streak: {
+        count: 0,
+        lastStudyDate: null,
+        todayCompleted: false
+    }
+};
+
+const ACCOUNTS_KEY = 'jsmaster_accounts';
+const CURRENT_USER_KEY = 'jsmaster_current_user';
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
+// ==========================================
+// DOM ELEMENTS
+// ==========================================
+const elements = {
+    // Login Screen
+    loginScreen: document.getElementById('loginScreen'),
+    loginForm: document.getElementById('loginForm'),
+    usernameInput: document.getElementById('usernameInput'),
+    existingAccounts: document.getElementById('existingAccounts'),
+    accountsList: document.getElementById('accountsList'),
+
+    // Hero
+    hero: document.getElementById('hero'),
+    startLearning: document.getElementById('startLearning'),
+    continueBtn: document.getElementById('continueBtn'),
+    codeRain: document.getElementById('codeRain'),
+    userBar: document.getElementById('userBar'),
+    displayUserName: document.getElementById('displayUserName'),
+    logoutBtn: document.getElementById('logoutBtn'),
+
+    // Platform
+    platform: document.getElementById('platform'),
+    backToHome: document.getElementById('backToHome'),
+    headerUserName: document.getElementById('headerUserName'),
+
+    // Sidebar
+    sidebar: document.getElementById('sidebar'),
+    menuBtn: document.getElementById('menuBtn'),
+    closeSidebar: document.getElementById('closeSidebar'),
+    sidebarOverlay: document.getElementById('sidebarOverlay'),
+    courseCategories: document.getElementById('courseCategories'),
+
+    // Content
+    courseBadge: document.getElementById('courseBadge'),
+    courseName: document.getElementById('courseName'),
+    lessonBadge: document.getElementById('lessonBadge'),
+    lessonTitle: document.getElementById('lessonTitle'),
+    lessonContent: document.getElementById('lessonContent'),
+
+    // Example Code
+    exampleSection: document.getElementById('exampleSection'),
+    exampleCodeContent: document.getElementById('exampleCodeContent'),
+    copyExampleBtn: document.getElementById('copyExampleBtn'),
+
+    // Challenge
+    challengeSection: document.getElementById('challengeSection'),
+    challengeInstruction: document.getElementById('challengeInstruction'),
+    challengeStatus: document.getElementById('challengeStatus'),
+    hintBtn: document.getElementById('hintBtn'),
+    hintContent: document.getElementById('hintContent'),
+
+    // Code Editor
+    codeInput: document.getElementById('codeInput'),
+    lineNumbers: document.getElementById('lineNumbers'),
+    runBtn: document.getElementById('runBtn'),
+    resetCodeBtn: document.getElementById('resetCodeBtn'),
+    copyBtn: document.getElementById('copyBtn'),
+    outputConsole: document.getElementById('outputConsole'),
+    clearOutput: document.getElementById('clearOutput'),
+
+    // Navigation
+    prevBtn: document.getElementById('prevBtn'),
+    nextBtn: document.getElementById('nextBtn'),
+    mobilePrevBtn: document.getElementById('mobilePrevBtn'),
+    mobileNextBtn: document.getElementById('mobileNextBtn'),
+    mobileMenuBtn: document.getElementById('mobileMenuBtn'),
+
+    // Streak
+    streakContainer: document.getElementById('streakContainer'),
+    fireIcon: document.getElementById('fireIcon'),
+    streakCount: document.getElementById('streakCount'),
+    tooltipDesc: document.getElementById('tooltipDesc'),
+    sidebarStreak: document.getElementById('sidebarStreak'),
+
+    // Other
+    completionMessage: document.getElementById('completionMessage'),
+    nextCategoryBtn: document.getElementById('nextCategoryBtn'),
+    restartBtn: document.getElementById('restartBtn')
+};
+
+// ==========================================
+// ACCOUNT MANAGEMENT
+// ==========================================
+function getAllAccounts() {
+    try {
+        const accounts = localStorage.getItem(ACCOUNTS_KEY);
+        return accounts ? JSON.parse(accounts) : {};
+    } catch (e) {
+        return {};
+    }
+}
+
+function saveAllAccounts(accounts) {
+    try {
+        localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
+    } catch (e) {
+        console.error('Failed to save accounts:', e);
+    }
+}
+
+function getAccountData(username) {
+    const accounts = getAllAccounts();
+    return accounts[username] || null;
+}
+
+function saveAccountData(username, data) {
+    const accounts = getAllAccounts();
+    accounts[username] = data;
+    saveAllAccounts(accounts);
+}
+
+function loginUser(username) {
+    currentUser = username;
+    localStorage.setItem(CURRENT_USER_KEY, username);
+
+    const userData = getAccountData(username);
+    if (userData) {
+        state = { ...state, ...userData };
+        if (!isToday(state.streak.lastStudyDate)) {
+            state.streak.todayCompleted = false;
+        }
+    } else {
+        state = {
+            currentCourseId: 'basics',
+            currentLessonIndex: 0,
+            completedLessons: [],
+            showPlatform: false,
+            currentLessonPassed: false,
+            streak: { count: 0, lastStudyDate: null, todayCompleted: false }
+        };
+        saveAccountData(username, state);
+    }
+
+    updateUserDisplay();
+    showHero();
+
+    if (state.completedLessons.length > 0 && elements.continueBtn) {
+        elements.continueBtn.style.display = 'inline-flex';
+    }
+}
+
+function logoutUser() {
+    currentUser = null;
+    localStorage.removeItem(CURRENT_USER_KEY);
+    elements.hero.style.display = 'none';
+    elements.platform.classList.remove('active');
+    elements.loginScreen.classList.remove('hidden');
+    elements.loginScreen.style.display = 'flex';
+    renderExistingAccounts();
+}
+
+function updateUserDisplay() {
+    if (currentUser) {
+        elements.displayUserName.textContent = currentUser;
+        elements.headerUserName.textContent = currentUser;
+    }
+}
+
+function renderExistingAccounts() {
+    const accounts = getAllAccounts();
+    const usernames = Object.keys(accounts);
+
+    if (usernames.length > 0) {
+        elements.existingAccounts.classList.add('show');
+        elements.accountsList.innerHTML = usernames.map(username => `
+            <button class="account-btn" data-username="${username}">
+                <span class="account-avatar">👤</span>
+                <span>${username}</span>
+            </button>
+        `).join('');
+
+        document.querySelectorAll('.account-btn').forEach(btn => {
+            btn.addEventListener('click', () => loginUser(btn.dataset.username));
+        });
+    } else {
+        elements.existingAccounts.classList.remove('show');
+    }
+}
+
+// ==========================================
+// UTILITY FUNCTIONS
+// ==========================================
+function getCurrentCourse() {
+    return courses.find(c => c.id === state.currentCourseId) || courses[0];
+}
+
+function getCurrentLesson() {
+    const course = getCurrentCourse();
+    return course.lessons[state.currentLessonIndex];
+}
+
+function getCompletedLessonsInCourse(courseId) {
+    return state.completedLessons.filter(l => l.courseId === courseId).length;
+}
+
+function isLessonCompleted(courseId, lessonId) {
+    return state.completedLessons.some(l => l.courseId === courseId && l.lessonId === lessonId);
+}
+
+function getDateString(date) {
+    return new Date(date).toDateString();
+}
+
+function isToday(dateString) {
+    if (!dateString) return false;
+    return getDateString(new Date()) === getDateString(new Date(dateString));
+}
+
+function daysSinceLastStudy() {
+    if (!state.streak.lastStudyDate) return Infinity;
+    const now = new Date();
+    const lastStudy = new Date(state.streak.lastStudyDate);
+    return Math.floor((now - lastStudy) / ONE_DAY_MS);
+}
+
+// ==========================================
+// STREAK SYSTEM
+// ==========================================
+function updateStreak() {
+    const daysSince = daysSinceLastStudy();
+    if (daysSince > 2) {
+        state.streak.count = 0;
+        state.streak.todayCompleted = false;
+    }
+    renderStreak();
+}
+
+function recordStudySession() {
+    const lastStudy = state.streak.lastStudyDate ? getDateString(new Date(state.streak.lastStudyDate)) : null;
+
+    if (!state.streak.todayCompleted) {
+        const daysSince = daysSinceLastStudy();
+        if (daysSince > 2) {
+            state.streak.count = 1;
+        } else if (daysSince >= 1) {
+            state.streak.count++;
+        } else if (daysSince === 0 && !lastStudy) {
+            state.streak.count = 1;
+        }
+        state.streak.lastStudyDate = new Date().toISOString();
+        state.streak.todayCompleted = true;
+        saveProgress();
+        renderStreak();
+    }
+}
+
+function renderStreak() {
+    const count = state.streak.count;
+    elements.streakCount.textContent = count;
+    if (elements.sidebarStreak) elements.sidebarStreak.textContent = count;
+
+    if (count === 0) {
+        elements.tooltipDesc.textContent = 'เริ่มเรียนวันนี้เพื่อเริ่ม Streak!';
+        elements.fireIcon.classList.add('inactive');
+    } else if (state.streak.todayCompleted) {
+        elements.tooltipDesc.textContent = `เยี่ยม! คุณเรียนต่อเนื่อง ${count} วันแล้ว 🔥`;
+        elements.fireIcon.classList.remove('inactive');
+    } else {
+        const daysSince = daysSinceLastStudy();
+        if (daysSince === 1) {
+            elements.tooltipDesc.textContent = `Streak: ${count} วัน - เรียนวันนี้เพื่อต่อยอด!`;
+        } else if (daysSince === 2) {
+            elements.tooltipDesc.textContent = `⚠️ Streak จะหายหลังวันนี้!`;
+        }
+        elements.fireIcon.classList.remove('inactive');
+    }
+}
+
+// ==========================================
+// CHALLENGE VALIDATION
+// ==========================================
+function validateChallenge(outputs, code) {
+    const lesson = getCurrentLesson();
+    const challenge = lesson.challenge;
+
+    if (!challenge) return true;
+
+    // Custom validation function
+    if (challenge.validateFn) {
+        return challenge.validateFn(outputs, code);
+    }
+
+    // Expected output matching
+    if (challenge.expectedOutput) {
+        if (outputs.length !== challenge.expectedOutput.length) return false;
+
+        for (let i = 0; i < challenge.expectedOutput.length; i++) {
+            const expected = String(challenge.expectedOutput[i]).trim();
+            const actual = String(outputs[i].content).trim();
+            if (actual !== expected) return false;
+        }
+        return true;
+    }
+
+    return outputs.length > 0;
+}
+
+function updateChallengeStatus(passed) {
+    state.currentLessonPassed = passed;
+
+    const statusEl = elements.challengeStatus;
+    if (passed) {
+        statusEl.className = 'challenge-status success';
+        statusEl.innerHTML = '✅ ถูกต้อง! คุณสามารถไปบทถัดไปได้';
+        elements.nextBtn.disabled = false;
+        elements.mobileNextBtn.disabled = false;
+    } else {
+        statusEl.className = 'challenge-status';
+        statusEl.innerHTML = '';
+    }
+
+    updateNavigationState();
+}
+
+function showWrongAnswer() {
+    const statusEl = elements.challengeStatus;
+    statusEl.className = 'challenge-status error';
+    statusEl.innerHTML = '❌ ยังไม่ถูกต้อง ลองอีกครั้ง!';
+}
+
+function toggleHint() {
+    const hintEl = elements.hintContent;
+    if (hintEl.classList.contains('show')) {
+        hintEl.classList.remove('show');
+    } else {
+        const lesson = getCurrentLesson();
+        if (lesson.challenge && lesson.challenge.hint) {
+            hintEl.textContent = '💡 ' + lesson.challenge.hint;
+            hintEl.classList.add('show');
+        }
+    }
+}
+
+// ==========================================
+// LOCAL STORAGE
+// ==========================================
+function saveProgress() {
+    if (currentUser) {
+        saveAccountData(currentUser, state);
+    }
+}
+
+// ==========================================
+// RENDER FUNCTIONS
+// ==========================================
+function renderCourseCategories() {
+    let html = '';
+
+    courses.forEach(course => {
+        const total = course.lessons.length;
+        const completed = getCompletedLessonsInCourse(course.id);
+        const isActive = course.id === state.currentCourseId;
+        const isExpanded = isActive;
+
+        html += `
+            <div class="course-category" data-course-id="${course.id}">
+                <div class="category-header ${isActive ? 'active' : ''} ${isExpanded ? 'expanded' : ''}">
+                    <div class="category-info">
+                        <span class="category-icon">${course.icon}</span>
+                        <div>
+                            <div class="category-title">${course.title}</div>
+                            <div class="category-progress">${completed}/${total} บท</div>
+                        </div>
+                    </div>
+                    <svg class="category-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </div>
+                <ul class="category-lessons ${isExpanded ? 'show' : ''}">
+                    ${course.lessons.map((lesson, index) => {
+            const isLessonActive = isActive && index === state.currentLessonIndex;
+            const isCompleted = isLessonCompleted(course.id, lesson.id);
+            let statusIcon = isCompleted ? '✓' : (index + 1);
+
+            return `
+                            <li class="lesson-item ${isLessonActive ? 'active' : ''} ${isCompleted ? 'completed' : ''}">
+                                <a href="#" data-course-id="${course.id}" data-lesson-index="${index}">
+                                    <span class="lesson-status">${statusIcon}</span>
+                                    <span class="lesson-name">${lesson.title}</span>
+                                </a>
+                            </li>
+                        `;
+        }).join('')}
+                </ul>
+            </div>
+        `;
+    });
+
+    elements.courseCategories.innerHTML = html;
+
+    document.querySelectorAll('.category-header').forEach(header => {
+        header.addEventListener('click', () => {
+            header.classList.toggle('expanded');
+            header.nextElementSibling.classList.toggle('show');
+        });
+    });
+
+    document.querySelectorAll('.lesson-item a').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const courseId = link.dataset.courseId;
+            const lessonIndex = parseInt(link.dataset.lessonIndex);
+
+            // Can only go to completed lessons or current lesson
+            const lesson = courses.find(c => c.id === courseId).lessons[lessonIndex];
+            if (isLessonCompleted(courseId, lesson.id) ||
+                (courseId === state.currentCourseId && lessonIndex <= state.currentLessonIndex)) {
+                navigateToLesson(courseId, lessonIndex);
+                closeSidebar();
+            }
+        });
+    });
+}
+
+function renderLessonContent() {
+    const course = getCurrentCourse();
+    const lesson = getCurrentLesson();
+
+    // Reset passed state for new lesson
+    const alreadyCompleted = isLessonCompleted(state.currentCourseId, lesson.id);
+    state.currentLessonPassed = alreadyCompleted;
+
+    // Course badge
+    elements.courseName.textContent = course.title;
+
+    // Lesson badge and title
+    elements.lessonBadge.textContent = `บทที่ ${state.currentLessonIndex + 1}`;
+    elements.lessonTitle.textContent = lesson.title;
+    elements.lessonContent.innerHTML = lesson.content;
+
+    // Example code
+    elements.exampleCodeContent.textContent = lesson.codeExample;
+
+    // Challenge
+    if (lesson.challenge) {
+        elements.challengeInstruction.innerHTML = lesson.challenge.instruction;
+        elements.hintContent.classList.remove('show');
+
+        if (alreadyCompleted) {
+            elements.challengeStatus.className = 'challenge-status success';
+            elements.challengeStatus.innerHTML = '✅ บทนี้ผ่านแล้ว!';
+        } else {
+            elements.challengeStatus.className = 'challenge-status';
+            elements.challengeStatus.innerHTML = '';
+        }
+    }
+
+    // Code editor - empty for practice
+    elements.codeInput.value = '';
+    updateLineNumbers();
+    clearConsole();
+
+    // Navigation
+    updateNavigationState();
+}
+
+function updateNavigationState() {
+    const course = getCurrentCourse();
+    const lesson = getCurrentLesson();
+    const isFirstLesson = state.currentLessonIndex === 0;
+    const isLastLesson = state.currentLessonIndex === course.lessons.length - 1;
+    const alreadyCompleted = isLessonCompleted(state.currentCourseId, lesson.id);
+
+    elements.prevBtn.disabled = isFirstLesson;
+    elements.mobilePrevBtn.disabled = isFirstLesson;
+
+    // Block next button if not passed
+    const canGoNext = state.currentLessonPassed || alreadyCompleted;
+    elements.nextBtn.disabled = !canGoNext;
+    elements.mobileNextBtn.disabled = !canGoNext;
+
+    if (isLastLesson) {
+        elements.nextBtn.querySelector('span').textContent = 'เสร็จสิ้น 🎉';
+        elements.mobileNextBtn.querySelector('span').textContent = 'เสร็จ';
+    } else {
+        elements.nextBtn.querySelector('span').textContent = 'บทถัดไป';
+        elements.mobileNextBtn.querySelector('span').textContent = 'ถัดไป';
+    }
+}
+
+function renderAll() {
+    renderCourseCategories();
+    renderLessonContent();
+    updateStreak();
+}
+
+// ==========================================
+// CODE EDITOR FUNCTIONS
+// ==========================================
+function updateLineNumbers() {
+    const lines = elements.codeInput.value.split('\n').length;
+    let html = '';
+    for (let i = 1; i <= Math.max(lines, 3); i++) {
+        html += i + '\n';
+    }
+    elements.lineNumbers.textContent = html;
+}
+
+function runCode() {
+    const code = elements.codeInput.value;
+
+    if (!code.trim()) {
+        addOutput('กรุณาเขียนโค้ดก่อนกดรัน!', 'warn');
+        return;
+    }
+
+    clearConsole();
+
+    const outputs = [];
+    const customConsole = {
+        log: (...args) => outputs.push({ type: 'log', content: args.map(formatOutput).join(' ') }),
+        error: (...args) => outputs.push({ type: 'error', content: args.map(formatOutput).join(' ') }),
+        warn: (...args) => outputs.push({ type: 'warn', content: args.map(formatOutput).join(' ') }),
+        info: (...args) => outputs.push({ type: 'info', content: args.map(formatOutput).join(' ') })
+    };
+
+    try {
+        const wrappedCode = `(function(console) { ${code} })(customConsole);`;
+        eval(wrappedCode);
+
+        if (outputs.length === 0) {
+            addOutput('(ไม่มี output - ลองใช้ console.log())', 'info');
+        } else {
+            outputs.forEach(out => addOutput(out.content, out.type));
+        }
+
+        // Validate challenge
+        const passed = validateChallenge(outputs, code);
+        if (passed) {
+            updateChallengeStatus(true);
+        } else if (outputs.length > 0) {
+            showWrongAnswer();
+        }
+
+    } catch (error) {
+        addOutput('❌ Error: ' + error.message, 'error');
+        showWrongAnswer();
+    }
+}
+
+function formatOutput(value) {
+    if (value === undefined) return 'undefined';
+    if (value === null) return 'null';
+    if (typeof value === 'object') {
+        try { return JSON.stringify(value, null, 2); }
+        catch (e) { return String(value); }
+    }
+    return String(value);
+}
+
+function addOutput(text, type = 'log') {
+    const placeholder = elements.outputConsole.querySelector('.output-placeholder');
+    if (placeholder) placeholder.remove();
+
+    const line = document.createElement('div');
+    line.className = `output-line ${type}`;
+    line.textContent = text;
+    elements.outputConsole.appendChild(line);
+    elements.outputConsole.scrollTop = elements.outputConsole.scrollHeight;
+}
+
+function clearConsole() {
+    elements.outputConsole.innerHTML = '<div class="output-placeholder">คลิก "รันโค้ด" เพื่อดูผลลัพธ์...</div>';
+}
+
+function resetCode() {
+    elements.codeInput.value = '';
+    updateLineNumbers();
+    clearConsole();
+    elements.challengeStatus.className = 'challenge-status';
+    elements.challengeStatus.innerHTML = '';
+    state.currentLessonPassed = isLessonCompleted(state.currentCourseId, getCurrentLesson().id);
+    updateNavigationState();
+}
+
+async function copyCode() {
+    try {
+        await navigator.clipboard.writeText(elements.codeInput.value);
+        elements.copyBtn.classList.add('copied');
+        setTimeout(() => elements.copyBtn.classList.remove('copied'), 2000);
+    } catch (err) {
+        alert('ไม่สามารถคัดลอกได้');
+    }
+}
+
+async function copyExampleCode() {
+    try {
+        const lesson = getCurrentLesson();
+        await navigator.clipboard.writeText(lesson.codeExample);
+        elements.copyExampleBtn.classList.add('copied');
+        setTimeout(() => elements.copyExampleBtn.classList.remove('copied'), 2000);
+    } catch (err) {
+        alert('ไม่สามารถคัดลอกได้');
+    }
+}
+
+// ==========================================
+// NAVIGATION
+// ==========================================
+function navigateToLesson(courseId, lessonIndex) {
+    state.currentCourseId = courseId;
+    state.currentLessonIndex = lessonIndex;
+    state.currentLessonPassed = false;
+    saveProgress();
+    renderAll();
+    elements.completionMessage.classList.remove('show');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function nextLesson() {
+    if (!state.currentLessonPassed && !isLessonCompleted(state.currentCourseId, getCurrentLesson().id)) {
+        return; // Blocked
+    }
+
+    const course = getCurrentCourse();
+    const lesson = getCurrentLesson();
+
+    if (!isLessonCompleted(state.currentCourseId, lesson.id)) {
+        state.completedLessons.push({
+            courseId: state.currentCourseId,
+            lessonId: lesson.id
+        });
+        recordStudySession();
+    }
+
+    if (state.currentLessonIndex === course.lessons.length - 1) {
+        elements.completionMessage.classList.add('show');
+        saveProgress();
+        renderCourseCategories();
+    } else {
+        state.currentLessonIndex++;
+        state.currentLessonPassed = false;
+        saveProgress();
+        renderAll();
+    }
+}
+
+function prevLesson() {
+    if (state.currentLessonIndex > 0) {
+        state.currentLessonIndex--;
+        state.currentLessonPassed = false;
+        saveProgress();
+        renderAll();
+    }
+}
+
+function nextCategory() {
+    const currentIndex = courses.findIndex(c => c.id === state.currentCourseId);
+    if (currentIndex < courses.length - 1) {
+        state.currentCourseId = courses[currentIndex + 1].id;
+        state.currentLessonIndex = 0;
+        state.currentLessonPassed = false;
+        saveProgress();
+        renderAll();
+        elements.completionMessage.classList.remove('show');
+    }
+}
+
+// ==========================================
+// VIEW MANAGEMENT
+// ==========================================
+function showPlatform() {
+    elements.hero.style.display = 'none';
+    elements.platform.classList.add('active');
+    state.showPlatform = true;
+    renderAll();
+}
+
+function showHero() {
+    elements.loginScreen.classList.add('hidden');
+    elements.loginScreen.style.display = 'none';
+    elements.hero.style.display = 'flex';
+    elements.platform.classList.remove('active');
+    state.showPlatform = false;
+}
+
+function openSidebar() {
+    elements.sidebar.classList.add('open');
+    elements.sidebarOverlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeSidebar() {
+    elements.sidebar.classList.remove('open');
+    elements.sidebarOverlay.classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+// ==========================================
+// CODE RAIN EFFECT
+// ==========================================
+function createCodeRain() {
+    if (!elements.codeRain) return;
+    const chars = 'const let function if else for while'.split(' ');
+    for (let i = 0; i < 20; i++) {
+        setTimeout(() => {
+            const char = document.createElement('span');
+            char.className = 'code-char';
+            char.textContent = chars[Math.floor(Math.random() * chars.length)];
+            char.style.left = Math.random() * 100 + '%';
+            char.style.animationDuration = (Math.random() * 10 + 10) + 's';
+            char.style.animationDelay = Math.random() * 5 + 's';
+            char.style.fontSize = (Math.random() * 10 + 10) + 'px';
+            elements.codeRain.appendChild(char);
+            setTimeout(() => char.remove(), 20000);
+        }, i * 200);
+    }
+}
+
+// ==========================================
+// EVENT LISTENERS
+// ==========================================
+function initEventListeners() {
+    // Login
+    elements.loginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const username = elements.usernameInput.value.trim();
+        if (username) loginUser(username);
+    });
+
+    elements.logoutBtn.addEventListener('click', logoutUser);
+
+    // Hero
+    elements.startLearning.addEventListener('click', showPlatform);
+    elements.continueBtn?.addEventListener('click', showPlatform);
+    elements.backToHome.addEventListener('click', showHero);
+
+    // Sidebar
+    elements.menuBtn.addEventListener('click', openSidebar);
+    elements.closeSidebar.addEventListener('click', closeSidebar);
+    elements.sidebarOverlay.addEventListener('click', closeSidebar);
+    elements.mobileMenuBtn.addEventListener('click', openSidebar);
+
+    // Code Editor
+    elements.codeInput.addEventListener('input', updateLineNumbers);
+    elements.codeInput.addEventListener('keydown', (e) => {
+        if (e.ctrlKey && e.key === 'Enter') {
+            e.preventDefault();
+            runCode();
+        }
+        if (e.key === 'Tab') {
+            e.preventDefault();
+            const start = elements.codeInput.selectionStart;
+            const end = elements.codeInput.selectionEnd;
+            elements.codeInput.value = elements.codeInput.value.substring(0, start) + '  ' + elements.codeInput.value.substring(end);
+            elements.codeInput.selectionStart = elements.codeInput.selectionEnd = start + 2;
+            updateLineNumbers();
+        }
+    });
+
+    elements.runBtn.addEventListener('click', runCode);
+    elements.resetCodeBtn.addEventListener('click', resetCode);
+    elements.copyBtn.addEventListener('click', copyCode);
+    elements.copyExampleBtn.addEventListener('click', copyExampleCode);
+    elements.clearOutput.addEventListener('click', clearConsole);
+    elements.hintBtn?.addEventListener('click', toggleHint);
+
+    // Navigation
+    elements.nextBtn.addEventListener('click', nextLesson);
+    elements.prevBtn.addEventListener('click', prevLesson);
+    elements.mobileNextBtn.addEventListener('click', nextLesson);
+    elements.mobilePrevBtn.addEventListener('click', prevLesson);
+    elements.nextCategoryBtn?.addEventListener('click', nextCategory);
+    elements.restartBtn?.addEventListener('click', () => {
+        state.currentLessonIndex = 0;
+        state.currentLessonPassed = false;
+        saveProgress();
+        renderAll();
+        elements.completionMessage.classList.remove('show');
+    });
+}
+
+// ==========================================
+// INITIALIZATION
+// ==========================================
+function init() {
+    console.log('🚀 JS Master - กำลังเริ่มต้น...');
+
+    const savedUser = localStorage.getItem(CURRENT_USER_KEY);
+    if (savedUser) {
+        loginUser(savedUser);
+    } else {
+        elements.loginScreen.style.display = 'flex';
+        elements.hero.style.display = 'none';
+        elements.platform.classList.remove('active');
+        renderExistingAccounts();
+    }
+
+    createCodeRain();
+    setInterval(createCodeRain, 15000);
+    initEventListeners();
+    updateLineNumbers();
+
+    console.log('✅ JS Master - พร้อมใช้งาน!');
+}
+
+document.addEventListener('DOMContentLoaded', init);
