@@ -9,245 +9,20 @@
  * 3. ระบบตรวจสอบโจทย์ (ต้องทำถูกก่อนไปบทถัดไป)
  * 4. หมวดหมู่บทเรียน (Course Categories)
  * 5. Code Editor แบบ Interactive
+ * 
+ * บทเรียนโหลดจาก:
+ * - courses-part1.js (Introduction → Objects)
+ * - courses-part2.js (Events → Type Conversion)
+ * - courses-part3.js (Errors → JSON)
  */
 
 // ==========================================
-// COURSE DATA - หมวดหมู่และบทเรียน
+// COURSE DATA - รวมจากไฟล์ทั้ง 3 parts
 // ==========================================
 const courses = [
-    {
-        id: 'basics',
-        title: 'JavaScript พื้นฐาน',
-        icon: '📘',
-        description: 'เริ่มต้นเรียนรู้ JavaScript ตั้งแต่เบสิค',
-        lessons: [
-            {
-                id: 1,
-                title: "รู้จักกับ JavaScript",
-                content: `
-                    <p><strong>🎉 ยินดีต้อนรับสู่โลกของ JavaScript!</strong></p>
-                    <p>JavaScript เป็นภาษาโปรแกรมที่ทำให้เว็บไซต์มีชีวิต ทุกครั้งที่คุณเห็นเว็บไซต์ที่มี Animation หรือตอบสนองต่อการคลิกของคุณ นั่นคือผลงานของ JavaScript!</p>
-                    
-                    <p><strong>🚀 สิ่งที่คุณทำได้ด้วย JavaScript:</strong></p>
-                    <ul>
-                        <li>สร้างเว็บไซต์ที่โต้ตอบกับผู้ใช้ได้</li>
-                        <li>ทำ Animation และเอฟเฟกต์สวยๆ</li>
-                        <li>สร้างเกมบนเว็บ</li>
-                    </ul>
-                `,
-                codeExample: `// ใช้ console.log() เพื่อแสดงข้อความ
-console.log("สวัสดี JavaScript!");
-
-// แสดงผลการคำนวณ
-console.log(1 + 1);`,
-                challenge: {
-                    instruction: `<strong>🎯 โจทย์:</strong> ใช้ <code>console.log()</code> แสดงข้อความ <code>"Hello World"</code>`,
-                    expectedOutput: ["Hello World"],
-                    hint: 'พิมพ์: console.log("Hello World");'
-                }
-            },
-            {
-                id: 2,
-                title: "ตัวแปร (Variables)",
-                content: `
-                    <p><strong>📦 ตัวแปร</strong> คือ "กล่องเก็บข้อมูล" ที่เราตั้งชื่อได้</p>
-                    
-                    <p><strong>วิธีสร้างตัวแปร:</strong></p>
-                    <ul>
-                        <li><code>let</code> - ค่าที่เปลี่ยนแปลงได้</li>
-                        <li><code>const</code> - ค่าคงที่</li>
-                    </ul>
-                `,
-                codeExample: `// สร้างตัวแปร
-let name = "สมชาย";
-let age = 25;
-
-console.log(name);
-console.log(age);`,
-                challenge: {
-                    instruction: `<strong>🎯 โจทย์:</strong> สร้างตัวแปรชื่อ <code>myName</code> เก็บชื่อของคุณ แล้ว <code>console.log(myName)</code>`,
-                    validateFn: (outputs, code) => {
-                        return code.includes('myName') &&
-                            code.includes('console.log') &&
-                            outputs.length > 0 &&
-                            outputs[0].content.trim().length > 0;
-                    },
-                    hint: 'ตัวอย่าง: let myName = "ชื่อคุณ"; console.log(myName);'
-                }
-            },
-            {
-                id: 3,
-                title: "ชนิดข้อมูล (Data Types)",
-                content: `
-                    <p><strong>🏷️ ชนิดข้อมูลพื้นฐาน:</strong></p>
-                    <ul>
-                        <li><code>String</code> - ข้อความ <code>"สวัสดี"</code></li>
-                        <li><code>Number</code> - ตัวเลข <code>42</code></li>
-                        <li><code>Boolean</code> - <code>true</code> / <code>false</code></li>
-                    </ul>
-                    <p>ใช้ <code>typeof</code> เพื่อตรวจสอบชนิด</p>
-                `,
-                codeExample: `let text = "Hello";
-let num = 100;
-let isTrue = true;
-
-console.log(typeof text);   // "string"
-console.log(typeof num);    // "number"
-console.log(typeof isTrue); // "boolean"`,
-                challenge: {
-                    instruction: `<strong>🎯 โจทย์:</strong> สร้างตัวแปร <code>myAge</code> เก็บอายุเป็นตัวเลข แล้วใช้ <code>console.log(typeof myAge)</code> ให้แสดงผลเป็น <code>number</code>`,
-                    expectedOutput: ["number"],
-                    hint: 'ตัวอย่าง: let myAge = 20; console.log(typeof myAge);'
-                }
-            }
-        ]
-    },
-    {
-        id: 'control-flow',
-        title: 'การควบคุมการทำงาน',
-        icon: '🔀',
-        description: 'เงื่อนไข, ลูป และการตัดสินใจ',
-        lessons: [
-            {
-                id: 4,
-                title: "เงื่อนไข If-Else",
-                content: `
-                    <p><strong>🔀 If-Else</strong> ทำให้โปรแกรมตัดสินใจได้</p>
-                    <ul>
-                        <li><code>===</code> เท่ากัน</li>
-                        <li><code>></code> มากกว่า</li>
-                        <li><code><</code> น้อยกว่า</li>
-                        <li><code>>=</code> มากกว่าหรือเท่ากับ</li>
-                    </ul>
-                `,
-                codeExample: `let age = 20;
-
-if (age >= 18) {
-    console.log("ผู้ใหญ่");
-} else {
-    console.log("เด็ก");
-}`,
-                challenge: {
-                    instruction: `<strong>🎯 โจทย์ประยุกต์:</strong> สร้างตัวแปร <code>score</code> เก็บค่า <code>75</code> แล้วเขียนเงื่อนไข:<br>
-                    - ถ้า score >= 50 ให้แสดง <code>"ผ่าน"</code><br>
-                    - ถ้าไม่ผ่าน ให้แสดง <code>"ไม่ผ่าน"</code>`,
-                    expectedOutput: ["ผ่าน"],
-                    hint: 'สร้าง score = 75 แล้วใช้ if (score >= 50) { console.log("ผ่าน"); }'
-                }
-            },
-            {
-                id: 5,
-                title: "Loop (การวนซ้ำ)",
-                content: `
-                    <p><strong>🔁 Loop</strong> คือการทำซ้ำคำสั่ง</p>
-                    <p><strong>for loop:</strong></p>
-                    <code>for (let i = 1; i <= 5; i++) { ... }</code>
-                    <ul>
-                        <li><code>i = 1</code> - เริ่มต้น</li>
-                        <li><code>i <= 5</code> - เงื่อนไข</li>
-                        <li><code>i++</code> - เพิ่มค่าทีละ 1</li>
-                    </ul>
-                `,
-                codeExample: `for (let i = 1; i <= 3; i++) {
-    console.log(i);
-}
-// แสดง: 1, 2, 3`,
-                challenge: {
-                    instruction: `<strong>🎯 โจทย์ประยุกต์:</strong> ใช้ <code>for loop</code> แสดงตัวเลข <code>1</code> ถึง <code>5</code> (แต่ละตัวแยกกัน)`,
-                    expectedOutput: ["1", "2", "3", "4", "5"],
-                    hint: 'for (let i = 1; i <= 5; i++) { console.log(i); }'
-                }
-            }
-        ]
-    },
-    {
-        id: 'data-structures',
-        title: 'โครงสร้างข้อมูล',
-        icon: '📊',
-        description: 'Array, Object และการจัดการข้อมูล',
-        lessons: [
-            {
-                id: 6,
-                title: "Array (อาร์เรย์)",
-                content: `
-                    <p><strong>📋 Array</strong> เก็บข้อมูลหลายๆ ค่าในตัวแปรเดียว</p>
-                    <ul>
-                        <li>สร้างด้วย <code>[]</code></li>
-                        <li>Index เริ่มที่ <code>0</code></li>
-                        <li><code>.length</code> - นับจำนวน</li>
-                        <li><code>.push()</code> - เพิ่มท้าย</li>
-                    </ul>
-                `,
-                codeExample: `let fruits = ["แอปเปิ้ล", "กล้วย", "ส้ม"];
-
-console.log(fruits[0]); // แอปเปิ้ล
-console.log(fruits.length); // 3`,
-                challenge: {
-                    instruction: `<strong>🎯 โจทย์ประยุกต์:</strong> สร้าง Array ชื่อ <code>colors</code> มี 3 สี แล้วใช้ <code>console.log(colors.length)</code> แสดงจำนวนสมาชิก (ต้องได้ <code>3</code>)`,
-                    expectedOutput: ["3"],
-                    hint: 'let colors = ["red", "green", "blue"]; console.log(colors.length);'
-                }
-            },
-            {
-                id: 7,
-                title: "Object (อ็อบเจกต์)",
-                content: `
-                    <p><strong>🏠 Object</strong> เก็บข้อมูลแบบ key-value</p>
-                    <ul>
-                        <li>สร้างด้วย <code>{ key: value }</code></li>
-                        <li>เข้าถึงด้วย <code>object.key</code></li>
-                    </ul>
-                `,
-                codeExample: `const person = {
-    name: "สมชาย",
-    age: 25
-};
-
-console.log(person.name); // สมชาย`,
-                challenge: {
-                    instruction: `<strong>🎯 โจทย์ประยุกต์:</strong> สร้าง Object ชื่อ <code>student</code> มี <code>name</code> และ <code>grade</code> แล้ว <code>console.log(student.grade)</code> ให้แสดงเกรดที่คุณใส่`,
-                    validateFn: (outputs, code) => {
-                        return code.includes('student') &&
-                            code.includes('grade') &&
-                            code.includes('console.log') &&
-                            outputs.length > 0 &&
-                            outputs[0].content.trim().length > 0;
-                    },
-                    hint: 'const student = { name: "ชื่อ", grade: "A" }; console.log(student.grade);'
-                }
-            }
-        ]
-    },
-    {
-        id: 'functions',
-        title: 'ฟังก์ชัน',
-        icon: '⚡',
-        description: 'Function และการนำกลับมาใช้ซ้ำ',
-        lessons: [
-            {
-                id: 8,
-                title: "Function (ฟังก์ชัน)",
-                content: `
-                    <p><strong>⚡ Function</strong> คือกลุ่มโค้ดที่เรียกใช้ซ้ำได้</p>
-                    <ul>
-                        <li><code>function ชื่อ() { }</code> - สร้างฟังก์ชัน</li>
-                        <li><code>ชื่อ()</code> - เรียกใช้</li>
-                        <li><code>return</code> - ส่งค่ากลับ</li>
-                    </ul>
-                `,
-                codeExample: `function greet(name) {
-    return "Hello " + name;
-}
-
-console.log(greet("World")); // Hello World`,
-                challenge: {
-                    instruction: `<strong>🎯 โจทย์ประยุกต์:</strong> สร้างฟังก์ชัน <code>add(a, b)</code> ที่ return ผลบวกของ a และ b แล้ว <code>console.log(add(3, 5))</code> ให้แสดง <code>8</code>`,
-                    expectedOutput: ["8"],
-                    hint: 'function add(a, b) { return a + b; } console.log(add(3, 5));'
-                }
-            }
-        ]
-    }
+    ...coursesPart1,
+    ...coursesPart2,
+    ...coursesPart3
 ];
 
 // ==========================================
@@ -255,7 +30,7 @@ console.log(greet("World")); // Hello World`,
 // ==========================================
 let currentUser = null;
 let state = {
-    currentCourseId: 'basics',
+    currentCourseId: 'introduction',
     currentLessonIndex: 0,
     completedLessons: [],
     showPlatform: false,
