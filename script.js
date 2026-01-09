@@ -1,494 +1,899 @@
-<!DOCTYPE html>
-<html lang="th">
+/**
+ * ==========================================
+ * JS MASTER - แพลตฟอร์มเรียน JavaScript ภาษาไทย
+ * ==========================================
+ * 
+ * ฟีเจอร์:
+ * 1. ระบบ Login (แยกบัญชีผู้ใช้)
+ * 2. ระบบ Streak (ไฟ) แบบ Duolingo
+ * 3. ระบบตรวจสอบโจทย์ (ต้องทำถูกก่อนไปบทถัดไป)
+ * 4. หมวดหมู่บทเรียน (Course Categories)
+ * 5. Code Editor แบบ Interactive
+ * 
+ * บทเรียนโหลดจาก:
+ * - courses-part1.js (Introduction → Objects)
+ * - courses-part2.js (Events → Type Conversion)
+ * - courses-part3.js (Errors → JSON)
+ */
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="เรียนรู้ JavaScript แบบ Interactive - แพลตฟอร์มเรียนรู้ JavaScript ภาษาไทย">
-    <title>JS Master - เรียน JavaScript แบบสนุก</title>
+// ==========================================
+// COURSE DATA - รวมจากไฟล์ทั้ง 3 parts
+// ==========================================
+const courses = [
+    ...coursesPart1,
+    ...coursesPart2,
+    ...coursesPart3
+];
 
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Fira+Code:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap"
-        rel="stylesheet">
+// ==========================================
+// STATE MANAGEMENT
+// ==========================================
+let currentUser = null;
+let state = {
+    currentCourseId: 'introduction',
+    currentLessonIndex: 0,
+    completedLessons: [],
+    showPlatform: false,
+    currentLessonPassed: false,
+    streak: {
+        count: 0,
+        lastStudyDate: null,
+        todayCompleted: false
+    }
+};
 
-    <link rel="stylesheet" href="style.css">
-</head>
+const ACCOUNTS_KEY = 'jsmaster_accounts';
+const CURRENT_USER_KEY = 'jsmaster_current_user';
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
-<body>
-    <!-- ========================================
-         LOGIN SCREEN
-         ======================================== -->
-    <section class="login-screen" id="loginScreen">
-        <div class="login-bg">
-            <div class="floating-shapes">
-                <div class="shape shape-1"></div>
-                <div class="shape shape-2"></div>
-                <div class="shape shape-3"></div>
-                <div class="shape shape-4"></div>
-                <div class="shape shape-5"></div>
-            </div>
-            <div class="gradient-orb orb-1"></div>
-            <div class="gradient-orb orb-2"></div>
-        </div>
+// ==========================================
+// DOM ELEMENTS
+// ==========================================
+const elements = {
+    // Login Screen
+    loginScreen: document.getElementById('loginScreen'),
+    loginForm: document.getElementById('loginForm'),
+    usernameInput: document.getElementById('usernameInput'),
+    existingAccounts: document.getElementById('existingAccounts'),
+    accountsList: document.getElementById('accountsList'),
 
-        <div class="login-container">
-            <div class="login-card">
-                <div class="login-header">
-                    <span class="login-icon">⚡</span>
-                    <h1>JS Master</h1>
-                    <p>เข้าสู่ระบบเพื่อบันทึกความก้าวหน้าของคุณ</p>
-                </div>
+    // Hero
+    hero: document.getElementById('hero'),
+    startLearning: document.getElementById('startLearning'),
+    continueBtn: document.getElementById('continueBtn'),
+    codeRain: document.getElementById('codeRain'),
+    userBar: document.getElementById('userBar'),
+    displayUserName: document.getElementById('displayUserName'),
+    logoutBtn: document.getElementById('logoutBtn'),
 
-                <form class="login-form" id="loginForm">
-                    <div class="form-group">
-                        <label for="usernameInput">ชื่อบัญชี</label>
-                        <input type="text" id="usernameInput" placeholder="กรอกชื่อของคุณ..." autocomplete="off"
-                            minlength="2" maxlength="20" required>
-                        <span class="input-hint">ใช้ชื่อเดิมเพื่อเรียนต่อจากที่ค้างไว้</span>
-                    </div>
+    // Platform
+    platform: document.getElementById('platform'),
+    backToHome: document.getElementById('backToHome'),
+    headerUserName: document.getElementById('headerUserName'),
 
-                    <button type="submit" class="login-btn">
-                        <span>เข้าสู่ระบบ</span>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2">
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                            <polyline points="12 5 19 12 12 19"></polyline>
-                        </svg>
-                    </button>
-                </form>
+    // Sidebar
+    sidebar: document.getElementById('sidebar'),
+    menuBtn: document.getElementById('menuBtn'),
+    closeSidebar: document.getElementById('closeSidebar'),
+    sidebarOverlay: document.getElementById('sidebarOverlay'),
+    courseCategories: document.getElementById('courseCategories'),
 
-                <div class="existing-accounts" id="existingAccounts">
-                    <p class="accounts-label">หรือเลือกบัญชีที่มีอยู่:</p>
-                    <div class="accounts-list" id="accountsList"></div>
-                </div>
-            </div>
-        </div>
-    </section>
+    // Content
+    courseBadge: document.getElementById('courseBadge'),
+    courseName: document.getElementById('courseName'),
+    lessonBadge: document.getElementById('lessonBadge'),
+    lessonTitle: document.getElementById('lessonTitle'),
+    lessonContent: document.getElementById('lessonContent'),
 
-    <!-- ========================================
-         HERO LANDING PAGE
-         ======================================== -->
-    <section class="hero" id="hero">
-        <!-- Animated Background -->
-        <div class="hero-bg">
-            <div class="floating-shapes">
-                <div class="shape shape-1"></div>
-                <div class="shape shape-2"></div>
-                <div class="shape shape-3"></div>
-                <div class="shape shape-4"></div>
-                <div class="shape shape-5"></div>
-            </div>
-            <div class="code-rain" id="codeRain"></div>
-            <div class="gradient-orb orb-1"></div>
-            <div class="gradient-orb orb-2"></div>
-            <div class="gradient-orb orb-3"></div>
-        </div>
+    // Example Code
+    exampleSection: document.getElementById('exampleSection'),
+    exampleCodeContent: document.getElementById('exampleCodeContent'),
+    copyExampleBtn: document.getElementById('copyExampleBtn'),
 
-        <!-- User Info Bar -->
-        <div class="user-bar" id="userBar">
-            <div class="user-info">
-                <span class="user-avatar">👤</span>
-                <span class="user-name" id="displayUserName">ผู้ใช้</span>
-            </div>
-            <button class="logout-btn" id="logoutBtn" title="ออกจากระบบ">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                    <polyline points="16 17 21 12 16 7"></polyline>
-                    <line x1="21" y1="12" x2="9" y2="12"></line>
-                </svg>
-                <span>ออก</span>
-            </button>
-        </div>
+    // Challenge
+    challengeSection: document.getElementById('challengeSection'),
+    challengeInstruction: document.getElementById('challengeInstruction'),
+    challengeStatus: document.getElementById('challengeStatus'),
+    hintBtn: document.getElementById('hintBtn'),
+    hintContent: document.getElementById('hintContent'),
 
-        <!-- Hero Content -->
-        <div class="hero-content">
-            <div class="hero-badge">
-                <span class="badge-icon">⚡</span>
-                <span>แพลตฟอร์มเรียนรู้ #1 ของไทย</span>
-            </div>
+    // Code Editor
+    codeInput: document.getElementById('codeInput'),
+    lineNumbers: document.getElementById('lineNumbers'),
+    runBtn: document.getElementById('runBtn'),
+    resetCodeBtn: document.getElementById('resetCodeBtn'),
+    copyBtn: document.getElementById('copyBtn'),
+    outputConsole: document.getElementById('outputConsole'),
+    clearOutput: document.getElementById('clearOutput'),
 
-            <h1 class="hero-title">
-                <span class="title-line">เรียนรู้</span>
-                <span class="title-highlight">JavaScript</span>
-                <span class="title-line">แบบมืออาชีพ</span>
-            </h1>
+    // Navigation
+    prevBtn: document.getElementById('prevBtn'),
+    nextBtn: document.getElementById('nextBtn'),
+    mobilePrevBtn: document.getElementById('mobilePrevBtn'),
+    mobileNextBtn: document.getElementById('mobileNextBtn'),
+    mobileMenuBtn: document.getElementById('mobileMenuBtn'),
 
-            <p class="hero-description">
-                เขียนโค้ดจริง รันได้ทันที พร้อมคำอธิบายภาษาไทยที่เข้าใจง่าย<br>
-                ไม่ต้องติดตั้งอะไร เริ่มเรียนได้เลยตอนนี้!
-            </p>
+    // Streak
+    streakContainer: document.getElementById('streakContainer'),
+    fireIcon: document.getElementById('fireIcon'),
+    streakCount: document.getElementById('streakCount'),
+    tooltipDesc: document.getElementById('tooltipDesc'),
+    sidebarStreak: document.getElementById('sidebarStreak'),
 
-            <!-- Feature Pills -->
-            <div class="feature-pills">
-                <div class="pill">
-                    <span class="pill-icon">🎯</span>
-                    <span>โจทย์ตรวจสอบ</span>
-                </div>
-                <div class="pill">
-                    <span class="pill-icon">💻</span>
-                    <span>ฝึกเขียนโค้ดจริง</span>
-                </div>
-                <div class="pill">
-                    <span class="pill-icon">🔥</span>
-                    <span>ระบบ Streak</span>
-                </div>
-                <div class="pill">
-                    <span class="pill-icon">🇹🇭</span>
-                    <span>ภาษาไทย 100%</span>
-                </div>
-            </div>
+    // Other
+    completionMessage: document.getElementById('completionMessage'),
+    nextCategoryBtn: document.getElementById('nextCategoryBtn'),
+    restartBtn: document.getElementById('restartBtn')
+};
 
-            <!-- CTA Buttons -->
-            <div class="hero-cta">
-                <button class="btn-primary" id="startLearning">
-                    <span>เริ่มเรียนเลย</span>
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                        <polyline points="12 5 19 12 12 19"></polyline>
-                    </svg>
-                </button>
-                <button class="btn-secondary" id="continueBtn" style="display: none;">
-                    <span>เรียนต่อจากที่ค้างไว้</span>
-                </button>
-            </div>
-
-            <!-- Stats -->
-            <div class="hero-stats">
-                <div class="stat">
-                    <span class="stat-value">4</span>
-                    <span class="stat-label">หมวดหมู่</span>
-                </div>
-                <div class="stat">
-                    <span class="stat-value">8</span>
-                    <span class="stat-label">บทเรียน</span>
-                </div>
-                <div class="stat">
-                    <span class="stat-value">Free</span>
-                    <span class="stat-label">ฟรีตลอดชีพ</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Interactive Code Demo -->
-        <div class="hero-demo">
-            <div class="demo-window">
-                <div class="demo-header">
-                    <div class="demo-dots">
-                        <span class="dot red"></span>
-                        <span class="dot yellow"></span>
-                        <span class="dot green"></span>
-                    </div>
-                    <span class="demo-title">script.js</span>
-                </div>
-                <div class="demo-code" id="demoCode">
-                    <pre><code><span class="keyword">const</span> <span class="variable">message</span> = <span class="string">"สวัสดี JavaScript!"</span>;
-
-<span class="keyword">function</span> <span class="function">greet</span>(<span class="param">name</span>) {
-    <span class="keyword">return</span> <span class="string">`ยินดีต้อนรับ ${</span><span class="variable">name</span><span class="string">}!`</span>;
+// ==========================================
+// ACCOUNT MANAGEMENT
+// ==========================================
+function getAllAccounts() {
+    try {
+        const accounts = localStorage.getItem(ACCOUNTS_KEY);
+        return accounts ? JSON.parse(accounts) : {};
+    } catch (e) {
+        return {};
+    }
 }
 
-<span class="builtin">console</span>.<span class="method">log</span>(<span class="function">greet</span>(<span class="string">"คุณ"</span>));
-<span class="comment">// Output: ยินดีต้อนรับ คุณ!</span></code></pre>
-                </div>
-            </div>
-        </div>
+function saveAllAccounts(accounts) {
+    try {
+        localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
+    } catch (e) {
+        console.error('Failed to save accounts:', e);
+    }
+}
 
-        <!-- Scroll Indicator -->
-        <div class="scroll-indicator">
-            <div class="mouse">
-                <div class="wheel"></div>
-            </div>
-            <span>เลื่อนลงเพื่อดูเพิ่มเติม</span>
-        </div>
-    </section>
+function getAccountData(username) {
+    const accounts = getAllAccounts();
+    return accounts[username] || null;
+}
 
-    <!-- ========================================
-         LEARNING PLATFORM
-         ======================================== -->
-    <div class="platform" id="platform">
+function saveAccountData(username, data) {
+    const accounts = getAllAccounts();
+    accounts[username] = data;
+    saveAllAccounts(accounts);
+}
 
-        <!-- Header -->
-        <header class="header">
-            <div class="header-content">
-                <div class="header-left">
-                    <!-- Hamburger Menu -->
-                    <button class="menu-btn" id="menuBtn" title="เปิดเมนู">
-                        <span class="hamburger-line"></span>
-                        <span class="hamburger-line"></span>
-                        <span class="hamburger-line"></span>
-                    </button>
+function loginUser(username) {
+    currentUser = username;
+    localStorage.setItem(CURRENT_USER_KEY, username);
 
-                    <div class="brand">
-                        <span class="brand-icon">⚡</span>
-                        <h1 class="brand-name">JS Master</h1>
-                    </div>
-                </div>
+    const userData = getAccountData(username);
+    if (userData) {
+        state = { ...state, ...userData };
+        if (!isToday(state.streak.lastStudyDate)) {
+            state.streak.todayCompleted = false;
+        }
+    } else {
+        state = {
+            currentCourseId: 'basics',
+            currentLessonIndex: 0,
+            completedLessons: [],
+            showPlatform: false,
+            currentLessonPassed: false,
+            streak: { count: 0, lastStudyDate: null, todayCompleted: false }
+        };
+        saveAccountData(username, state);
+    }
 
-                <div class="header-center">
-                    <button class="back-home-btn" id="backToHome">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2">
-                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                            <polyline points="9 22 9 12 15 12 15 22"></polyline>
-                        </svg>
-                        <span>หน้าแรก</span>
-                    </button>
-                </div>
+    updateUserDisplay();
+    showHero();
 
-                <div class="header-right">
-                    <!-- User Display -->
-                    <div class="header-user" id="headerUser">
-                        <span class="user-avatar-small">👤</span>
-                        <span class="header-user-name" id="headerUserName">ผู้ใช้</span>
-                    </div>
+    if (state.completedLessons.length > 0 && elements.continueBtn) {
+        elements.continueBtn.style.display = 'inline-flex';
+    }
+}
 
-                    <!-- Streak Fire -->
-                    <div class="streak-container" id="streakContainer">
-                        <div class="streak-fire">
-                            <div class="fire-icon" id="fireIcon">
-                                <div class="fire-inner"></div>
-                                <div class="fire-glow"></div>
-                            </div>
-                            <span class="streak-count" id="streakCount">0</span>
-                        </div>
-                        <div class="streak-tooltip" id="streakTooltip">
-                            <p class="tooltip-title">🔥 Streak ของคุณ</p>
-                            <p class="tooltip-desc" id="tooltipDesc">เรียนทุกวันเพื่อเพิ่ม Streak!</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </header>
+function logoutUser() {
+    currentUser = null;
+    localStorage.removeItem(CURRENT_USER_KEY);
+    elements.hero.style.display = 'none';
+    elements.platform.classList.remove('active');
+    elements.loginScreen.classList.remove('hidden');
+    elements.loginScreen.style.display = 'flex';
+    renderExistingAccounts();
+}
 
-        <div class="main-container">
+function updateUserDisplay() {
+    if (currentUser) {
+        elements.displayUserName.textContent = currentUser;
+        elements.headerUserName.textContent = currentUser;
+    }
+}
 
-            <!-- Sidebar - Course Categories -->
-            <aside class="sidebar" id="sidebar">
-                <div class="sidebar-header">
-                    <h2>📚 หมวดหมู่เรียนรู้</h2>
-                    <button class="close-sidebar-btn" id="closeSidebar">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2">
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                        </svg>
-                    </button>
-                </div>
+function renderExistingAccounts() {
+    const accounts = getAllAccounts();
+    const usernames = Object.keys(accounts);
 
-                <nav class="course-nav">
-                    <div id="courseCategories"></div>
-                </nav>
-
-                <div class="sidebar-footer">
-                    <div class="streak-info">
-                        <div class="fire-icon small">
-                            <div class="fire-inner"></div>
-                        </div>
-                        <div class="streak-text">
-                            <span class="streak-label">วัน Streak</span>
-                            <span class="streak-value" id="sidebarStreak">0</span>
-                        </div>
-                    </div>
-                </div>
-            </aside>
-
-            <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
-            <!-- Main Content - Centered -->
-            <main class="content" id="content">
-                <div class="content-wrapper">
-
-                    <!-- Current Course Badge -->
-                    <div class="course-badge" id="courseBadge">
-                        <span class="course-icon">📘</span>
-                        <span class="course-name" id="courseName">JavaScript พื้นฐาน</span>
-                    </div>
-
-                    <div class="lesson-header">
-                        <span class="lesson-badge" id="lessonBadge">บทที่ 1</span>
-                        <h2 class="lesson-title" id="lessonTitle">กำลังโหลด...</h2>
-                    </div>
-
-                    <!-- Lesson Content -->
-                    <article class="lesson-content" id="lessonContent"></article>
-
-                    <!-- Example Code Display (Read-only) -->
-                    <section class="example-code-section" id="exampleSection">
-                        <div class="example-header">
-                            <span class="example-title">📖 ตัวอย่างโค้ด</span>
-                            <button class="copy-example-btn" id="copyExampleBtn" title="คัดลอกตัวอย่าง">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2">
-                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                                </svg>
-                                คัดลอก
-                            </button>
-                        </div>
-                        <div class="example-code">
-                            <pre><code id="exampleCodeContent"></code></pre>
-                        </div>
-                    </section>
-
-                    <!-- Challenge Section -->
-                    <section class="challenge-section" id="challengeSection">
-                        <div class="challenge-header">
-                            <span class="challenge-title">🎯 โจทย์ที่ต้องทำ</span>
-                        </div>
-                        <div class="challenge-body">
-                            <p class="challenge-instruction" id="challengeInstruction"></p>
-                            <div class="challenge-status" id="challengeStatus"></div>
-                            <div class="hint-area">
-                                <button class="hint-btn" id="hintBtn">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                        stroke-width="2">
-                                        <circle cx="12" cy="12" r="10"></circle>
-                                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-                                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                                    </svg>
-                                    ดูคำใบ้
-                                </button>
-                                <div class="hint-content" id="hintContent"></div>
-                            </div>
-                        </div>
-                    </section>
-
-                    <!-- Practice Code Editor -->
-                    <section class="code-editor-section">
-                        <div class="editor-header">
-                            <div class="editor-tabs">
-                                <button class="tab active">
-                                    <span class="tab-icon">✏️</span>
-                                    ลองเขียนเอง
-                                </button>
-                            </div>
-                            <div class="editor-actions">
-                                <button class="action-btn" id="resetCodeBtn" title="ล้างโค้ด">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                        stroke-width="2">
-                                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                                        <path d="M3 3v5h5" />
-                                    </svg>
-                                    ล้าง
-                                </button>
-                                <button class="action-btn copy" id="copyBtn" title="คัดลอกโค้ด">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                        stroke-width="2">
-                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                                    </svg>
-                                    คัดลอก
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="editor-container">
-                            <div class="line-numbers" id="lineNumbers"></div>
-                            <textarea class="code-input" id="codeInput" spellcheck="false"
-                                placeholder="// เขียนโค้ดที่นี่ตามโจทย์ด้านบน...&#10;// แล้วกดปุ่ม 'รันโค้ด' เพื่อตรวจสอบ!"></textarea>
-                        </div>
-
-                        <div class="run-section">
-                            <button class="run-btn" id="runBtn">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                                </svg>
-                                <span>รันโค้ด</span>
-                            </button>
-                            <span class="shortcut-hint">หรือกด Ctrl + Enter</span>
-                        </div>
-
-                        <!-- Output Console -->
-                        <div class="output-section">
-                            <div class="output-header">
-                                <span class="output-title">📺 ผลลัพธ์ (Console)</span>
-                                <button class="clear-btn" id="clearOutput" title="ล้างผลลัพธ์">ล้าง</button>
-                            </div>
-                            <div class="output-console" id="outputConsole">
-                                <div class="output-placeholder">คลิก "รันโค้ด" เพื่อดูผลลัพธ์...</div>
-                            </div>
-                        </div>
-                    </section>
-
-                    <!-- Navigation Buttons -->
-                    <div class="lesson-navigation">
-                        <button class="nav-btn btn-prev" id="prevBtn">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2">
-                                <line x1="19" y1="12" x2="5" y2="12"></line>
-                                <polyline points="12 19 5 12 12 5"></polyline>
-                            </svg>
-                            <span>บทก่อนหน้า</span>
-                        </button>
-
-                        <button class="nav-btn btn-next" id="nextBtn" disabled>
-                            <span>บทถัดไป</span>
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2">
-                                <line x1="5" y1="12" x2="19" y2="12"></line>
-                                <polyline points="12 5 19 12 12 19"></polyline>
-                            </svg>
-                        </button>
-                    </div>
-
-                    <!-- Completion Message -->
-                    <div class="completion-message" id="completionMessage">
-                        <div class="completion-content">
-                            <div class="trophy">🏆</div>
-                            <h3>ยินดีด้วย! 🎉</h3>
-                            <p>คุณเรียนจบหมวดหมู่นี้แล้ว!<br>ลองเรียนหมวดหมู่อื่นต่อไปได้เลย!</p>
-                            <div class="completion-actions">
-                                <button class="btn-primary" id="nextCategoryBtn">
-                                    หมวดหมู่ถัดไป
-                                </button>
-                                <button class="btn-secondary" id="restartBtn">
-                                    เรียนใหม่อีกครั้ง
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-            </main>
-        </div>
-
-        <!-- Mobile Bottom Navigation -->
-        <nav class="mobile-bottom-nav" id="mobileNav">
-            <button class="mobile-nav-btn" id="mobilePrevBtn">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="19" y1="12" x2="5" y2="12"></line>
-                    <polyline points="12 19 5 12 12 5"></polyline>
-                </svg>
-                <span>ก่อนหน้า</span>
+    if (usernames.length > 0) {
+        elements.existingAccounts.classList.add('show');
+        elements.accountsList.innerHTML = usernames.map(username => `
+            <button class="account-btn" data-username="${username}">
+                <span class="account-avatar">👤</span>
+                <span>${username}</span>
             </button>
-            <button class="mobile-nav-btn menu" id="mobileMenuBtn">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="3" y1="12" x2="21" y2="12"></line>
-                    <line x1="3" y1="6" x2="21" y2="6"></line>
-                    <line x1="3" y1="18" x2="21" y2="18"></line>
-                </svg>
-                <span>หัวข้อ</span>
-            </button>
-            <button class="mobile-nav-btn primary" id="mobileNextBtn" disabled>
-                <span>ถัดไป</span>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                    <polyline points="12 5 19 12 12 19"></polyline>
-                </svg>
-            </button>
-        </nav>
-    </div>
+        `).join('');
 
-    <!-- Course Data Files -->
-    <script src="courses-part1.js"></script>
-    <script src="courses-part2.js"></script>
-    <script src="courses-part3.js"></script>
-    
-    <!-- Main Application -->
-    <script src="script.js"></script>
-</body>
+        document.querySelectorAll('.account-btn').forEach(btn => {
+            btn.addEventListener('click', () => loginUser(btn.dataset.username));
+        });
+    } else {
+        elements.existingAccounts.classList.remove('show');
+    }
+}
 
-</html>
+// ==========================================
+// UTILITY FUNCTIONS
+// ==========================================
+function getCurrentCourse() {
+    return courses.find(c => c.id === state.currentCourseId) || courses[0];
+}
+
+function getCurrentLesson() {
+    const course = getCurrentCourse();
+    return course.lessons[state.currentLessonIndex];
+}
+
+function getCompletedLessonsInCourse(courseId) {
+    return state.completedLessons.filter(l => l.courseId === courseId).length;
+}
+
+function isLessonCompleted(courseId, lessonId) {
+    return state.completedLessons.some(l => l.courseId === courseId && l.lessonId === lessonId);
+}
+
+// ==========================================
+// DATE/TIME UTILITIES (Fixed for proper streak)
+// ==========================================
+function getLocalDateString(date) {
+    // แปลงเป็นวันที่ในรูปแบบ YYYY-MM-DD ตาม timezone ของผู้ใช้
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+function getTodayString() {
+    return getLocalDateString(new Date());
+}
+
+function isToday(dateString) {
+    if (!dateString) return false;
+    return getTodayString() === getLocalDateString(new Date(dateString));
+}
+
+function daysSinceLastStudy() {
+    if (!state.streak.lastStudyDate) return Infinity;
+
+    // เปรียบเทียบวันโดยใช้ local date เทียบกัน
+    const today = new Date(getTodayString());
+    const lastStudy = new Date(getLocalDateString(new Date(state.streak.lastStudyDate)));
+
+    const diffTime = today.getTime() - lastStudy.getTime();
+    const diffDays = Math.floor(diffTime / ONE_DAY_MS);
+
+    return diffDays;
+}
+
+// ==========================================
+// STREAK SYSTEM (Fixed)
+// ==========================================
+function updateStreak() {
+    const daysSince = daysSinceLastStudy();
+
+    // รีเซ็ต streak ถ้าไม่เรียนเกิน 2 วัน
+    if (daysSince > 2) {
+        state.streak.count = 0;
+        state.streak.todayCompleted = false;
+        saveProgress();
+    }
+    // รีเซ็ต todayCompleted ถ้าเป็นวันใหม่
+    else if (daysSince >= 1) {
+        state.streak.todayCompleted = false;
+    }
+
+    renderStreak();
+}
+
+function recordStudySession() {
+    const todayStr = getTodayString();
+    const lastStudyStr = state.streak.lastStudyDate
+        ? getLocalDateString(new Date(state.streak.lastStudyDate))
+        : null;
+
+    // ถ้าวันนี้ยังไม่ได้เรียน
+    if (!state.streak.todayCompleted) {
+        const daysSince = daysSinceLastStudy();
+
+        console.log('📅 Streak Debug:', {
+            today: todayStr,
+            lastStudy: lastStudyStr,
+            daysSince: daysSince,
+            currentStreak: state.streak.count
+        });
+
+        if (daysSince > 2 || !lastStudyStr) {
+            // เริ่มใหม่
+            state.streak.count = 1;
+        } else if (daysSince >= 1) {
+            // ต่อยอด streak! (วันใหม่)
+            state.streak.count++;
+        }
+        // ถ้า daysSince === 0 = วันนี้เรียนไปแล้ว ไม่เพิ่ม
+
+        state.streak.lastStudyDate = new Date().toISOString();
+        state.streak.todayCompleted = true;
+
+        console.log('🔥 New Streak:', state.streak.count);
+
+        saveProgress();
+        renderStreak();
+    }
+}
+
+function renderStreak() {
+    const count = state.streak.count;
+    const daysSince = daysSinceLastStudy();
+
+    elements.streakCount.textContent = count;
+    if (elements.sidebarStreak) elements.sidebarStreak.textContent = count;
+
+    // กรณี 1: ยังไม่เคยเรียนเลย (streak = 0)
+    if (count === 0) {
+        elements.tooltipDesc.textContent = 'เริ่มเรียนวันนี้เพื่อเริ่ม Streak!';
+        elements.fireIcon.classList.add('inactive');
+    }
+    // กรณี 2: วันนี้เรียนแล้ว → ไฟติด!
+    else if (state.streak.todayCompleted) {
+        elements.tooltipDesc.textContent = `เยี่ยม! คุณเรียนต่อเนื่อง ${count} วันแล้ว 🔥`;
+        elements.fireIcon.classList.remove('inactive');
+    }
+    // กรณี 3: วันใหม่ยังไม่เรียน → ไฟดับ (แต่ยังแสดงจำนวนวันเดิม)
+    else {
+        // ไฟดับ! รอให้เรียนก่อน
+        elements.fireIcon.classList.add('inactive');
+
+        if (daysSince === 1) {
+            elements.tooltipDesc.textContent = `🔥 ${count} วัน - เรียนวันนี้เพื่อเป็น ${count + 1} วัน!`;
+        } else if (daysSince === 2) {
+            elements.tooltipDesc.textContent = `⚠️ ${count} วัน - Streak จะหายถ้าไม่เรียนวันนี้!`;
+        } else if (daysSince > 2) {
+            // จะถูก reset ใน updateStreak() อยู่แล้ว
+            elements.tooltipDesc.textContent = 'เริ่มเรียนวันนี้เพื่อเริ่ม Streak ใหม่!';
+        }
+    }
+}
+
+// ==========================================
+// CHALLENGE VALIDATION
+// ==========================================
+function validateChallenge(outputs, code) {
+    const lesson = getCurrentLesson();
+    const challenge = lesson.challenge;
+
+    if (!challenge) return true;
+
+    // Custom validation function
+    if (challenge.validateFn) {
+        return challenge.validateFn(outputs, code);
+    }
+
+    // Expected output matching
+    if (challenge.expectedOutput) {
+        if (outputs.length !== challenge.expectedOutput.length) return false;
+
+        for (let i = 0; i < challenge.expectedOutput.length; i++) {
+            const expected = String(challenge.expectedOutput[i]).trim();
+            const actual = String(outputs[i].content).trim();
+            if (actual !== expected) return false;
+        }
+        return true;
+    }
+
+    return outputs.length > 0;
+}
+
+function updateChallengeStatus(passed) {
+    state.currentLessonPassed = passed;
+
+    const statusEl = elements.challengeStatus;
+    if (passed) {
+        statusEl.className = 'challenge-status success';
+        statusEl.innerHTML = '✅ ถูกต้อง! คุณสามารถไปบทถัดไปได้';
+        elements.nextBtn.disabled = false;
+        elements.mobileNextBtn.disabled = false;
+    } else {
+        statusEl.className = 'challenge-status';
+        statusEl.innerHTML = '';
+    }
+
+    updateNavigationState();
+}
+
+function showWrongAnswer() {
+    const statusEl = elements.challengeStatus;
+    statusEl.className = 'challenge-status error';
+    statusEl.innerHTML = '❌ ยังไม่ถูกต้อง ลองอีกครั้ง!';
+}
+
+function toggleHint() {
+    const hintEl = elements.hintContent;
+    if (hintEl.classList.contains('show')) {
+        hintEl.classList.remove('show');
+    } else {
+        const lesson = getCurrentLesson();
+        if (lesson.challenge && lesson.challenge.hint) {
+            hintEl.textContent = '💡 ' + lesson.challenge.hint;
+            hintEl.classList.add('show');
+        }
+    }
+}
+
+// ==========================================
+// LOCAL STORAGE
+// ==========================================
+function saveProgress() {
+    if (currentUser) {
+        saveAccountData(currentUser, state);
+    }
+}
+
+// ==========================================
+// RENDER FUNCTIONS
+// ==========================================
+function renderCourseCategories() {
+    let html = '';
+
+    courses.forEach(course => {
+        const total = course.lessons.length;
+        const completed = getCompletedLessonsInCourse(course.id);
+        const isActive = course.id === state.currentCourseId;
+        const isExpanded = isActive;
+
+        html += `
+            <div class="course-category" data-course-id="${course.id}">
+                <div class="category-header ${isActive ? 'active' : ''} ${isExpanded ? 'expanded' : ''}">
+                    <div class="category-info">
+                        <span class="category-icon">${course.icon}</span>
+                        <div>
+                            <div class="category-title">${course.title}</div>
+                            <div class="category-progress">${completed}/${total} บท</div>
+                        </div>
+                    </div>
+                    <svg class="category-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </div>
+                <ul class="category-lessons ${isExpanded ? 'show' : ''}">
+                    ${course.lessons.map((lesson, index) => {
+            const isLessonActive = isActive && index === state.currentLessonIndex;
+            const isCompleted = isLessonCompleted(course.id, lesson.id);
+            let statusIcon = isCompleted ? '✓' : (index + 1);
+
+            return `
+                            <li class="lesson-item ${isLessonActive ? 'active' : ''} ${isCompleted ? 'completed' : ''}">
+                                <a href="#" data-course-id="${course.id}" data-lesson-index="${index}">
+                                    <span class="lesson-status">${statusIcon}</span>
+                                    <span class="lesson-name">${lesson.title}</span>
+                                </a>
+                            </li>
+                        `;
+        }).join('')}
+                </ul>
+            </div>
+        `;
+    });
+
+    elements.courseCategories.innerHTML = html;
+
+    document.querySelectorAll('.category-header').forEach(header => {
+        header.addEventListener('click', () => {
+            header.classList.toggle('expanded');
+            header.nextElementSibling.classList.toggle('show');
+        });
+    });
+
+    document.querySelectorAll('.lesson-item a').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const courseId = link.dataset.courseId;
+            const lessonIndex = parseInt(link.dataset.lessonIndex);
+
+            // Can only go to completed lessons or current lesson
+            const lesson = courses.find(c => c.id === courseId).lessons[lessonIndex];
+            if (isLessonCompleted(courseId, lesson.id) ||
+                (courseId === state.currentCourseId && lessonIndex <= state.currentLessonIndex)) {
+                navigateToLesson(courseId, lessonIndex);
+                closeSidebar();
+            }
+        });
+    });
+}
+
+function renderLessonContent() {
+    const course = getCurrentCourse();
+    const lesson = getCurrentLesson();
+
+    // Reset passed state for new lesson
+    const alreadyCompleted = isLessonCompleted(state.currentCourseId, lesson.id);
+    state.currentLessonPassed = alreadyCompleted;
+
+    // Course badge
+    elements.courseName.textContent = course.title;
+
+    // Lesson badge and title
+    elements.lessonBadge.textContent = `บทที่ ${state.currentLessonIndex + 1}`;
+    elements.lessonTitle.textContent = lesson.title;
+    elements.lessonContent.innerHTML = lesson.content;
+
+    // Example code
+    elements.exampleCodeContent.textContent = lesson.codeExample;
+
+    // Challenge
+    if (lesson.challenge) {
+        elements.challengeInstruction.innerHTML = lesson.challenge.instruction;
+        elements.hintContent.classList.remove('show');
+
+        if (alreadyCompleted) {
+            elements.challengeStatus.className = 'challenge-status success';
+            elements.challengeStatus.innerHTML = '✅ บทนี้ผ่านแล้ว!';
+        } else {
+            elements.challengeStatus.className = 'challenge-status';
+            elements.challengeStatus.innerHTML = '';
+        }
+    }
+
+    // Code editor - empty for practice
+    elements.codeInput.value = '';
+    updateLineNumbers();
+    clearConsole();
+
+    // Navigation
+    updateNavigationState();
+}
+
+function updateNavigationState() {
+    const course = getCurrentCourse();
+    const lesson = getCurrentLesson();
+    const isFirstLesson = state.currentLessonIndex === 0;
+    const isLastLesson = state.currentLessonIndex === course.lessons.length - 1;
+    const alreadyCompleted = isLessonCompleted(state.currentCourseId, lesson.id);
+
+    elements.prevBtn.disabled = isFirstLesson;
+    elements.mobilePrevBtn.disabled = isFirstLesson;
+
+    // Block next button if not passed
+    const canGoNext = state.currentLessonPassed || alreadyCompleted;
+    elements.nextBtn.disabled = !canGoNext;
+    elements.mobileNextBtn.disabled = !canGoNext;
+
+    if (isLastLesson) {
+        elements.nextBtn.querySelector('span').textContent = 'เสร็จสิ้น 🎉';
+        elements.mobileNextBtn.querySelector('span').textContent = 'เสร็จ';
+    } else {
+        elements.nextBtn.querySelector('span').textContent = 'บทถัดไป';
+        elements.mobileNextBtn.querySelector('span').textContent = 'ถัดไป';
+    }
+}
+
+function renderAll() {
+    renderCourseCategories();
+    renderLessonContent();
+    updateStreak();
+}
+
+// ==========================================
+// CODE EDITOR FUNCTIONS
+// ==========================================
+function updateLineNumbers() {
+    const lines = elements.codeInput.value.split('\n').length;
+    let html = '';
+    for (let i = 1; i <= Math.max(lines, 3); i++) {
+        html += i + '\n';
+    }
+    elements.lineNumbers.textContent = html;
+}
+
+function runCode() {
+    const code = elements.codeInput.value;
+
+    if (!code.trim()) {
+        addOutput('กรุณาเขียนโค้ดก่อนกดรัน!', 'warn');
+        return;
+    }
+
+    clearConsole();
+
+    const outputs = [];
+    const customConsole = {
+        log: (...args) => outputs.push({ type: 'log', content: args.map(formatOutput).join(' ') }),
+        error: (...args) => outputs.push({ type: 'error', content: args.map(formatOutput).join(' ') }),
+        warn: (...args) => outputs.push({ type: 'warn', content: args.map(formatOutput).join(' ') }),
+        info: (...args) => outputs.push({ type: 'info', content: args.map(formatOutput).join(' ') })
+    };
+
+    try {
+        const wrappedCode = `(function(console) { ${code} })(customConsole);`;
+        eval(wrappedCode);
+
+        if (outputs.length === 0) {
+            addOutput('(ไม่มี output - ลองใช้ console.log())', 'info');
+        } else {
+            outputs.forEach(out => addOutput(out.content, out.type));
+        }
+
+        // Validate challenge
+        const passed = validateChallenge(outputs, code);
+        if (passed) {
+            updateChallengeStatus(true);
+        } else if (outputs.length > 0) {
+            showWrongAnswer();
+        }
+
+    } catch (error) {
+        addOutput('❌ Error: ' + error.message, 'error');
+        showWrongAnswer();
+    }
+}
+
+function formatOutput(value) {
+    if (value === undefined) return 'undefined';
+    if (value === null) return 'null';
+    if (typeof value === 'object') {
+        try { return JSON.stringify(value, null, 2); }
+        catch (e) { return String(value); }
+    }
+    return String(value);
+}
+
+function addOutput(text, type = 'log') {
+    const placeholder = elements.outputConsole.querySelector('.output-placeholder');
+    if (placeholder) placeholder.remove();
+
+    const line = document.createElement('div');
+    line.className = `output-line ${type}`;
+    line.textContent = text;
+    elements.outputConsole.appendChild(line);
+    elements.outputConsole.scrollTop = elements.outputConsole.scrollHeight;
+}
+
+function clearConsole() {
+    elements.outputConsole.innerHTML = '<div class="output-placeholder">คลิก "รันโค้ด" เพื่อดูผลลัพธ์...</div>';
+}
+
+function resetCode() {
+    elements.codeInput.value = '';
+    updateLineNumbers();
+    clearConsole();
+    elements.challengeStatus.className = 'challenge-status';
+    elements.challengeStatus.innerHTML = '';
+    state.currentLessonPassed = isLessonCompleted(state.currentCourseId, getCurrentLesson().id);
+    updateNavigationState();
+}
+
+async function copyCode() {
+    try {
+        await navigator.clipboard.writeText(elements.codeInput.value);
+        elements.copyBtn.classList.add('copied');
+        setTimeout(() => elements.copyBtn.classList.remove('copied'), 2000);
+    } catch (err) {
+        alert('ไม่สามารถคัดลอกได้');
+    }
+}
+
+async function copyExampleCode() {
+    try {
+        const lesson = getCurrentLesson();
+        await navigator.clipboard.writeText(lesson.codeExample);
+        elements.copyExampleBtn.classList.add('copied');
+        setTimeout(() => elements.copyExampleBtn.classList.remove('copied'), 2000);
+    } catch (err) {
+        alert('ไม่สามารถคัดลอกได้');
+    }
+}
+
+// ==========================================
+// NAVIGATION
+// ==========================================
+function navigateToLesson(courseId, lessonIndex) {
+    state.currentCourseId = courseId;
+    state.currentLessonIndex = lessonIndex;
+    state.currentLessonPassed = false;
+    saveProgress();
+    renderAll();
+    elements.completionMessage.classList.remove('show');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function nextLesson() {
+    if (!state.currentLessonPassed && !isLessonCompleted(state.currentCourseId, getCurrentLesson().id)) {
+        return; // Blocked
+    }
+
+    const course = getCurrentCourse();
+    const lesson = getCurrentLesson();
+
+    if (!isLessonCompleted(state.currentCourseId, lesson.id)) {
+        state.completedLessons.push({
+            courseId: state.currentCourseId,
+            lessonId: lesson.id
+        });
+        recordStudySession();
+    }
+
+    if (state.currentLessonIndex === course.lessons.length - 1) {
+        elements.completionMessage.classList.add('show');
+        saveProgress();
+        renderCourseCategories();
+    } else {
+        state.currentLessonIndex++;
+        state.currentLessonPassed = false;
+        saveProgress();
+        renderAll();
+    }
+}
+
+function prevLesson() {
+    if (state.currentLessonIndex > 0) {
+        state.currentLessonIndex--;
+        state.currentLessonPassed = false;
+        saveProgress();
+        renderAll();
+    }
+}
+
+function nextCategory() {
+    const currentIndex = courses.findIndex(c => c.id === state.currentCourseId);
+    if (currentIndex < courses.length - 1) {
+        state.currentCourseId = courses[currentIndex + 1].id;
+        state.currentLessonIndex = 0;
+        state.currentLessonPassed = false;
+        saveProgress();
+        renderAll();
+        elements.completionMessage.classList.remove('show');
+    }
+}
+
+// ==========================================
+// VIEW MANAGEMENT
+// ==========================================
+function showPlatform() {
+    elements.hero.style.display = 'none';
+    elements.platform.classList.add('active');
+    state.showPlatform = true;
+    renderAll();
+}
+
+function showHero() {
+    elements.loginScreen.classList.add('hidden');
+    elements.loginScreen.style.display = 'none';
+    elements.hero.style.display = 'flex';
+    elements.platform.classList.remove('active');
+    state.showPlatform = false;
+}
+
+function openSidebar() {
+    elements.sidebar.classList.add('open');
+    elements.sidebarOverlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeSidebar() {
+    elements.sidebar.classList.remove('open');
+    elements.sidebarOverlay.classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+// ==========================================
+// CODE RAIN EFFECT
+// ==========================================
+function createCodeRain() {
+    if (!elements.codeRain) return;
+    const chars = 'const let function if else for while'.split(' ');
+    for (let i = 0; i < 20; i++) {
+        setTimeout(() => {
+            const char = document.createElement('span');
+            char.className = 'code-char';
+            char.textContent = chars[Math.floor(Math.random() * chars.length)];
+            char.style.left = Math.random() * 100 + '%';
+            char.style.animationDuration = (Math.random() * 10 + 10) + 's';
+            char.style.animationDelay = Math.random() * 5 + 's';
+            char.style.fontSize = (Math.random() * 10 + 10) + 'px';
+            elements.codeRain.appendChild(char);
+            setTimeout(() => char.remove(), 20000);
+        }, i * 200);
+    }
+}
+
+// ==========================================
+// EVENT LISTENERS
+// ==========================================
+function initEventListeners() {
+    // Login
+    elements.loginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const username = elements.usernameInput.value.trim();
+        if (username) loginUser(username);
+    });
+
+    elements.logoutBtn.addEventListener('click', logoutUser);
+
+    // Hero
+    elements.startLearning.addEventListener('click', showPlatform);
+    elements.continueBtn?.addEventListener('click', showPlatform);
+    elements.backToHome.addEventListener('click', showHero);
+
+    // Sidebar
+    elements.menuBtn.addEventListener('click', openSidebar);
+    elements.closeSidebar.addEventListener('click', closeSidebar);
+    elements.sidebarOverlay.addEventListener('click', closeSidebar);
+    elements.mobileMenuBtn.addEventListener('click', openSidebar);
+
+    // Code Editor
+    elements.codeInput.addEventListener('input', updateLineNumbers);
+    elements.codeInput.addEventListener('keydown', (e) => {
+        if (e.ctrlKey && e.key === 'Enter') {
+            e.preventDefault();
+            runCode();
+        }
+        if (e.key === 'Tab') {
+            e.preventDefault();
+            const start = elements.codeInput.selectionStart;
+            const end = elements.codeInput.selectionEnd;
+            elements.codeInput.value = elements.codeInput.value.substring(0, start) + '  ' + elements.codeInput.value.substring(end);
+            elements.codeInput.selectionStart = elements.codeInput.selectionEnd = start + 2;
+            updateLineNumbers();
+        }
+    });
+
+    elements.runBtn.addEventListener('click', runCode);
+    elements.resetCodeBtn.addEventListener('click', resetCode);
+    elements.copyBtn.addEventListener('click', copyCode);
+    elements.copyExampleBtn.addEventListener('click', copyExampleCode);
+    elements.clearOutput.addEventListener('click', clearConsole);
+    elements.hintBtn?.addEventListener('click', toggleHint);
+
+    // Navigation
+    elements.nextBtn.addEventListener('click', nextLesson);
+    elements.prevBtn.addEventListener('click', prevLesson);
+    elements.mobileNextBtn.addEventListener('click', nextLesson);
+    elements.mobilePrevBtn.addEventListener('click', prevLesson);
+    elements.nextCategoryBtn?.addEventListener('click', nextCategory);
+    elements.restartBtn?.addEventListener('click', () => {
+        state.currentLessonIndex = 0;
+        state.currentLessonPassed = false;
+        saveProgress();
+        renderAll();
+        elements.completionMessage.classList.remove('show');
+    });
+}
+
+// ==========================================
+// INITIALIZATION
+// ==========================================
+function init() {
+    console.log('🚀 JS Master - กำลังเริ่มต้น...');
+
+    const savedUser = localStorage.getItem(CURRENT_USER_KEY);
+    if (savedUser) {
+        loginUser(savedUser);
+    } else {
+        elements.loginScreen.style.display = 'flex';
+        elements.hero.style.display = 'none';
+        elements.platform.classList.remove('active');
+        renderExistingAccounts();
+    }
+
+    createCodeRain();
+    setInterval(createCodeRain, 15000);
+    initEventListeners();
+    updateLineNumbers();
+
+    console.log('✅ JS Master - พร้อมใช้งาน!');
+}
+
+document.addEventListener('DOMContentLoaded', init);
